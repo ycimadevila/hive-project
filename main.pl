@@ -3,9 +3,12 @@ module('main',[piece/3, position/4, add/1, add/3, move/3]).
 meta_predicate piece(?,?,?). %% Name, X, Y
 meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
 
-%% turnos pares para las blancas e impares para las negras
+%% turnos pares para las negras e impares para las blancas
 turn(1).
+%% 1 si la reina ya esta en el tablero, 0 e.o.c.
+is_queen(0).
 
+%% METODOS INTERNOS %%
 add_piece(Name, X, Y) :-
     assert(piece(Name, X, Y)).
 
@@ -57,6 +60,7 @@ add(Name1, Name2, Mov) :-
     false.
 
 move(Name1, Name2, Mov) :-
+    %% ver si la reina ya esta en el tableto
     %% ver si la colmena no se rompe
     %% ver si la posicion no esta ocupada
     %% ver si el recorrido pertenece a N1
@@ -68,6 +72,19 @@ move(Name1, Name2, Mov) :-
 hive_dfs(Name1, Name2) :-
     %% analiza por DFS si la colmena esta desconectada
     false.
+
+is_queen_on_table() :-
+    bagof(X, is_queen(X), P), P =:= [1].
+
+surroundings(X, Y, Z) :- 
+    move_right(X, Y, Xr, Yr),
+    move_up_right(X, T, Xru, Yru),
+    move_down_right(X, T, Xdu, Ydu),
+    move_left(X, Y, Xl, Yl),
+    move_up_left(X, Y, Xlu, Ylu),
+    move_down_left(X, Y, Xld, Yld),
+    Z = [Xr, Yr, Xru, Yru, Xdu, Ydu, Xl, Yl, Xlu, Ylu, Xld, Yld]
+.
 
 %% METODOS DE MOVIMIENTO %%
 move_right(X, Y, X1, X2) :-
