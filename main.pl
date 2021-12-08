@@ -3,6 +3,7 @@ module('main',[piece/3, position/4, add/1, add/3, move/3]).
 meta_predicate piece(?,?,?). %% Name, X, Y
 meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
 
+%% turnos pares para las blancas e impares para las negras
 turn(1).
 
 add_piece(Name, X, Y) :-
@@ -40,14 +41,6 @@ position(1, 2, e2, e1).
 wr([]):- nl.
 wr([X:Y| List]) :- write(X), write("-->"), write(Y), nl, wr(List).
 
-get_movement([]) :- nl.
-get_movement([Str, S], I) :- 
-    I1 is I+1, 
-    get_movement(S, I1).
-
-move(Name1, Mov, Name2) :-
-    false.
-
 
 %%% METODOS DE INSERCION %%%
 add(Name) :- 
@@ -71,12 +64,12 @@ move(Name1, Name2, Mov) :-
     %% agregar objeto nuevo
     false.
 
-%% metodos auxiliares %%
+%% METODOS AUXILIARES %%
 hive_dfs(Name1, Name2) :-
     %% analiza por DFS si la colmena esta desconectada
     false.
 
-%% Metodos de Movimiento
+%% METODOS DE MOVIMIENTO %%
 move_right(X, Y, X1, X2) :-
     X1 is X + 1,
     Y1 is Y.
@@ -100,3 +93,50 @@ move_up_left(X, Y, X1, X2) :-
 move_down_left(X, Y, X1, X2) :-
     X1 is X - 1,
     Y1 is Y + 1.
+
+%% POSIBLES POSICIONES %%
+
+%% X: valor de x
+%% Y: valor de y
+%% Pos: lista de posibles posiciones
+queen_bee(X, Y, Pos) :-
+    %% la reina solo se mueve a una posicion vacia con un solo paso 
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
+    
+beetle(X, Y, Pos) :-
+    %% el escarabajo se mueve un solo paso, (no interesa si la posicion esta vacia o no) 
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
+
+ant(X, Y, Pos) :-
+    %% puede rodear la colmena, no puede ir a espacios vacios cualesquiera
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
+
+spider(X, Y, Pos) :-
+    %% se puede mover 3 posisiones, siempre tocando piezas en su trayectoria, manteniendo el contacto con la colmena
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
+
+grasshopper(X, Y, Pos):-
+    %% caminar en linea recta pasando por encima de las fichas existentes hasta encontrar un hueco
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
+
+lady_bug(X, Y, Pos):
+    %% se puede mover 3 posisiones, 2 por encima de la colmena, 1 para salir de ella
+    %% obtener posibles posiciones
+    %% comprobar validez (si no desconectan el grafo)
+    %% retornarlas
+    false.
