@@ -1,3 +1,4 @@
+:-module('inputs',[describe_piece/4]).
 get_move(L):- read(X), tokenize(X,L).
 
 %separa el movimiento del jugador para que quede de la forma:

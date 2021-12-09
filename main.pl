@@ -1,4 +1,5 @@
-module('main',[piece/3, position/4, add/1, add/3, move/3]).
+:-module('main',[piece/3, position/4, add/1, add/3, move/3]).
+:-use_module(inputs)
 
 meta_predicate piece(?,?,?). %% Name, X, Y
 meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
@@ -50,8 +51,8 @@ add(Name) :-
     %% analizar si es el turno 1
     bagof(X, turn(X), Y), Y =:= [1],
     %% agregar objeto 
-    assert(piece(Name, X, Y)),
-    assert(position(X, Y, ))    
+    assert(piece(Name, 1, 1)),
+    assert(position(1, 1, [Name]))    
 .
 
 add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
@@ -59,28 +60,34 @@ add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
     %% obtener posicion de Name1
     bagof(X, piece(Name1, X, _), [X1]),
     bagof(Y, piece(Name1, _, Y), [Y1]),
+    %% obtener posicion a la que va
+    move(X1, Y1, Mov, X1_, X2_),
     %% analizar si es posicion valida (pos vacia)
-    bagof(Temp, piece(Temp, X1, Y1), Temp1), 
+    bagof(Temp, piece(Temp, X1_, Y1_), Temp1), 
     Temp1 =:= [],
     %% agregar objeto
-    assert(piece(Name2, X1, Y1)),
-    assert(position, X1, Y1, [Name])
+    assert(piece(Name2, X1_, Y1_)),
+    assert(position, X1_, Y1_, [Name2])
 .
 
 
-add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
-    bagof(X, turn(X), Y), Y =:= [2],
+add(Name1, Name2, Mov) :-  
     %% obtener posicion de Name1
     bagof(X, piece(Name1, X, _), [X1]),
     bagof(Y, piece(Name1, _, Y), [Y1]),
     %% analizar si es posicion valida (pos vacia)
     bagof(Temp, piece(Temp, X1, Y1), Temp1), 
     Temp1 =:= [],
-    %% analizar si los alrededores de N2 son validos
-    
+    %% analizar si los alrededores de N2 son validos, si son del mismo color
+    describe_piece(Name1, Col, _, _),
+    bagof(Temp, turn(Temp1), [Turn]),
+    Col =:= Turn mod 2,
     %% agregar objeto
     assert(piece(Name2, X1, Y1)),
-    assert(position, X1, Y1, [Name])
+    assert(position, X1, Y1, [Name]),
+    %% actualiza el turno
+    retract(turn(Turn)),
+    assert(turn(Turn + 1))
 .
 
 move(Name1, Name2, Mov) :-
