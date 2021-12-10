@@ -1,11 +1,32 @@
-:-module('testing2', [if_name_queen/1, a/1]).
-if_name_queen(Name) :-
-    (Name =:= "WQ1",
+a(Val):-
+    (Val == "Hey1",
+    write(hola),
     true);
-    (Name =:= "BQ1",
+    (Val == "Hey2",
+    write(hola2),
     true);
-    true    
+    (Val == "Hey3",
+    write(hola2),
+    true)
 .
-a(A):-
-    A == "AA"
+
+selector(Val):-
+    (Val == 'Q',
+    write(hola),
+    true);
+    (Val == 'B',
+    write(hola2),
+    true);
+    (Val == 'A',
+    write(hola2),
+    true);
+    (Val == 'G',
+    write(hola2),
+    true);
+    (Val == 'S',
+    write(hola2),
+    true);
+    (Val == 'L',
+    write(hola2),
+    true)
 .

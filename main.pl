@@ -8,8 +8,7 @@
 :- dynamic bqueen/1.
 :- dynamic pieces_on_table/1.
 
-
-%% :- use_module(inputs).
+:- use_module(utils).
 
 describe_piece(S,C,T,N):- 
     string_chars(S, Ch), 
@@ -82,7 +81,6 @@ add(Name1, Name2, Mov) :-
     %% obtener posicion de Name1
     findall(X, piece(Name1, X, _), X1_),
     findall(X, piece(Name1, _, X), Y1_),
-    nth0(0, Y1_, Y1),
     
     nth0(0, X1_, X1),
     nth0(0, Y1_, Y1),
@@ -118,11 +116,17 @@ add(Name1, Name2, Mov) :-
     describe_piece(Name1, Col1, _, _),
     describe_piece(Name2, Col2, _, _),
     Col1 =:= Col2,
-    findall(X, piece(Name1, X, _), [X1]),
-    findall(Y, piece(Name1, _, Y), [Y1]),
+    findall(X, piece(Name1, X, _), X1_),
+    findall(X, piece(Name1, _, X), Y1_),
+    
+    nth0(0, X1_, X1),
+    nth0(0, Y1_, Y1),
+    
+    %% obtener posicion a la que va
+    move(X1, Y1, Mov, X_, Y_),
 
     %% analizar si es posicion valida (pos vacia)
-    findall(Temp, piece(Temp, X1, Y1), Temp1), 
+    findall(Temp, piece(Temp, X_, Y_), Temp1), 
     Temp1 =:= [],
 
     %% analizar si los alrededores de N2 son validos, si son del mismo color
@@ -130,9 +134,6 @@ add(Name1, Name2, Mov) :-
     findall(Temp, turn(Temp1), [Turn]),
     Col =:= Turn mod 2,
     check_valid_surrounding_positions(X1, Y1, Col),
-
-    %% analizar si uno de sus parametros X, Y son menores que 1 (expancionar el tablero)
-    expand_table(X, Y),
     
     %% agregar objeto
     write(agrego),
@@ -163,19 +164,20 @@ move(Name1, Name2, Mov, X, Y) :-
     X = 1,
     Y = 0
     %% ver si la reina ya esta en el tableto
-    %describe_piece(Name2, Col, _, _),
-    %is_queen_on_table(Col),
+    describe_piece(Name2, Col, _, _),
+    is_queen_on_table(Col),
 
     %% ver si la colmena no se rompe
-
+    true,
 
     %% obtener posicion
+    true,
 
-    %% ver si la posicion no esta ocupada
+    %% ver si la posicion no esta ocupada y si lo esta ver si la ficha no es un escarabajo
     %% ver si el recorrido pertenece a N1
     %% eliminar objeto anterior
     %% agregar objeto nuevo
-    %false
+    false
 .
 
 %% METODOS AUXILIARES %%
@@ -203,15 +205,6 @@ add_queen_to_table(Val) :-
     assert(wqueen(1))
 .
 
-surroundings(X, Y, Z) :- 
-    move_right(X, Y, Xr, Yr),
-    move_up_right(X, T, Xru, Yru),
-    move_down_right(X, T, Xrd, Yrd),
-    move_left(X, Y, Xl, Yl),
-    move_up_left(X, Y, Xlu, Ylu),
-    move_down_left(X, Y, Xld, Yld),
-    Z = [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]
-.
 
 check_valid_surrounding_positions(X, Y, Col):-
     surroundings(X, Y, [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]),
@@ -318,10 +311,26 @@ rec([X|Rx], N, N1) :-
 
 %% POSIBLES POSICIONES %%
 
+selector(Val, X, Y, Pos):-
+    (Val == 'Q',
+    queen_bee(X, Y, Pos));
+    (Val == 'B',
+    beetle(X, Y, Pos));
+    (Val == 'A',
+    ant(X, Y, Pos, 3));
+    (Val == 'G',
+    grasshopper(X, Y, Pos));
+    (Val == 'S',
+    spider(X, Y, Pos));
+    (Val == 'L',
+    lady_bug(X, Y, Pos))
+.
+
 %% X: valor de x
 %% Y: valor de y
 %% Pos: lista de posibles posiciones
 queen_bee(X, Y, Pos) :-
+    %% Reina
     %% la reina solo se mueve a una posicion vacia con un solo paso 
     %% obtener posibles posiciones
     %% comprobar validez
@@ -329,6 +338,7 @@ queen_bee(X, Y, Pos) :-
     false.
     
 beetle(X, Y, Pos) :-
+    %% Escarabajo
     %% el escarabajo se mueve un solo paso, (no interesa si la posicion esta vacia o no) 
     %% obtener posibles posiciones
     %% comprobar validez 
@@ -336,6 +346,7 @@ beetle(X, Y, Pos) :-
     false.
 
 ant(X, Y, Pos) :-
+    %% Hormiga
     %% puede rodear la colmena, no puede ir a espacios vacios cualesquiera
     %% obtener posibles posiciones
     %% comprobar validez
@@ -343,6 +354,7 @@ ant(X, Y, Pos) :-
     false.
 
 spider(X, Y, Pos) :-
+    %% Araña
     %% se puede mover 3 posisiones, siempre tocando piezas en su trayectoria, manteniendo el contacto con la colmena
     %% obtener posibles posiciones
     %% comprobar validez 
@@ -350,6 +362,7 @@ spider(X, Y, Pos) :-
     false.
 
 grasshopper(X, Y, Pos):-
+    %% Saltamontes
     %% caminar en linea recta pasando por encima de las fichas existentes hasta encontrar un hueco
     %% obtener posibles posiciones
     %% comprobar validez 
