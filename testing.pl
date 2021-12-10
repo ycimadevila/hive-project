@@ -7,3 +7,16 @@ inlist(Elem):-
 .
 member2(X, [Y|Ys]) :-
     X = Y ; member2(X, Ys).
+
+a():-
+    (false,
+    false);
+    true
+.
+b() :-
+    true,
+    (false;
+    (true,
+    true,
+    false)) %true
+.
