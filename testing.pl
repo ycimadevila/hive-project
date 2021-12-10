@@ -20,3 +20,8 @@ b() :-
     true,
     false)) %true
 .
+
+p():-
+    true,
+    write(holi),
+    false.
