@@ -81,11 +81,6 @@ register_all_surroundings([X1,Y1|Tail],X,Y,G):-
     add_edges(G, [V1-V2,V2-V1], G1),    
     register_all_surroundings(Tail,X,Y,G1).
     
-%%%%%%%%%%%%%%%%%%%%%
-%   POSSIBLE MOVES  %  
-%%%%%%%%%%%%%%%%%%%%%
 
-queen_moves(CurrentX,CurrentY,Positions):- surroundings(CurrentX, CurrentY,Positions).
-beatle_moves(CurrentX, CurrentY,Positions):- surroundings(CurrentX,CurrentY,Positions).
 
 

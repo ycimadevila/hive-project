@@ -1,30 +1,27 @@
-:-module('main',[piece/3, position/4, add/1, add/3, move/3]).
-:-use_module(inputs)
+:- module('main',[addfirst/1, add/3, move/3, if_name_queen/1]).
 
-meta_predicate piece(?,?,?). %% Name, X, Y
-meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
+:- dynamic add_queen_to_table/1.
+:- dynamic piece/3.
+:- dynamic position/3.
+:- dynamic turn/1.
+:- dynamic wqueen/1.
+:- dynamic bqueen/1.
+:- dynamic pieces_on_table/1.
 
-%% turnos pares para las negras e impares para las blancas
-turn(1).
-%% 1 si la reina ya esta en el tablero, 0 e.o.c.
-wqueen(0).
-bqueen(0).
+:- use_module(utils).
 
-%% piezas que ya se encuentran en el tablero
-pieces_on_table([]).
+describe_piece(S,C,T,N):- 
+    string_chars(S, Ch), 
+    nth0(0, Ch, C1),
+    color_code(C1,C),
+    nth0(1, Ch, T),
+    nth0(2, Ch, N).
+color_code('B', 0).
+color_code('W',1).
 
-%% METODOS INTERNOS %%
-add_piece(Name, X, Y) :-
-    assert(piece(Name, X, Y)).
+% meta_predicate piece(?,?,?). %% Name, X, Y
+% meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
 
-remove_piece(Name, X, Y):-
-    retract(piece(Name, X, Y)).
-
-add_position(X, Y, Name1, Name2) :-
-    assert(position(X, Y, Name1, Name2)).
-
-remove_position(X, Y, Name1, Name2) :-
-    retract(position(X, Y, Name1, Name2)). 
 
 %% print the piece
 print_piece([]) :- nl.
@@ -51,40 +48,65 @@ wr([X:Y| List]) :- write(X), write("-->"), write(Y), nl, wr(List).
 
 
 %%% METODOS DE INSERCION %%%
-add(Name) :- 
+addfirst(Name) :- 
+    %% turnos pares para las negras e impares para las blancas
+    assert(turn(1)),
+
+    %% 1 si la reina ya esta en el tablero, 0 e.o.c.
+    assert(wqueen(0)),
+    assert(bqueen(0)),
+    
+    %% piezas que ya se encuentran en el tablero
+    assert(pieces_on_table([])),
+
     %% analizar si es el turno 1
-    bagof(X, turn(X), Y), Y =:= [1],
-    %% agregar objeto 
-    assert(piece(Name, 1, 1)),
-    assert(position(1, 1, [Name])),
+    findall(X, turn(X), Y), Y =:= [1],
+
+    %% agregar objeto
+    assert(piece(Name, 0, 0)),
+    assert(position(0, 0, [Name])),
     if_name_queen(Name),
+
     %% agrega una nueva pieza
-    bagof(X, pieces_on_table(X), Pieces),
+    findall(X, pieces_on_table(X), [Pieces]),
     append(Pieces, [Name], Pieces_),
     retract(pieces_on_table(Pieces)),
-    append(pieces_on_table(Pieces_))
+    assert(pieces_on_table(Pieces_)),
+    retract(turn(1)),
+    assert(turn(2))
+.
+% analisis por si el turno es el 2do
+add(Name1, Name2, Mov) :-  
+    findall(X, turn(X), Y), Y =:= [2],
+    %% obtener posicion de Name1
+    findall(X, piece(Name1, X, _), X1_),
+    findall(X, piece(Name1, _, X), Y1_),
+    
+    nth0(0, X1_, X1),
+    nth0(0, Y1_, Y1),
+
+    %% obtener posicion a la que va
+    move(X1, Y1, Mov, X_, Y_),
+
+    %% analizar si es posicion valida (pos vacia)
+    findall(Temp, piece(Temp, X_, Y_), Temp1), 
+    Temp1 == [],
+
+    %% agregar objeto
+    assert(piece(Name2, X_, Y_)),
+    assert(position(X_, Y_, [Name2])),
+    
+    if_name_queen(Name2),
+
+    %% agrega una nueva pieza
+    findall(X, pieces_on_table(X), [Pieces]),
+    append(Pieces, [Name2], Pieces_),
+    retract(pieces_on_table(Pieces)),
+    assert(pieces_on_table(Pieces_)),
+    retract(turn(2)),
+    assert(turn(3))
 .
 
-add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
-    bagof(X, turn(X), Y), Y =:= [2],
-    %% obtener posicion de Name1
-    bagof(X, piece(Name1, X, _), [X1]),
-    bagof(Y, piece(Name1, _, Y), [Y1]),
-    %% obtener posicion a la que va
-    move(X1, Y1, Mov, X1_, X2_),
-    %% analizar si es posicion valida (pos vacia)
-    bagof(Temp, piece(Temp, X1_, Y1_), Temp1), 
-    Temp1 =:= [],
-    %% agregar objeto
-    assert(piece(Name2, X1_, Y1_)),
-    assert(position, X1_, Y1_, [Name2]),
-    if_name_queen(Name2).
-    %% agrega una nueva pieza
-    bagof(X, pieces_on_table(X), Pieces),
-    append(Pieces, [Name], Pieces_),
-    retract(pieces_on_table(Pieces)),
-    append(pieces_on_table(Pieces_))
-.
 
 %% Name1 pieza existente
 %% Name2 pieza a poner
@@ -92,26 +114,31 @@ add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
 add(Name1, Name2, Mov) :-  
     %% obtener posicion de Name1
     describe_piece(Name1, Col1, _, _),
-    describe_piece(Name2, Col2, _, ),
+    describe_piece(Name2, Col2, _, _),
     Col1 =:= Col2,
-    bagof(X, piece(Name1, X, _), [X1]),
-    bagof(Y, piece(Name1, _, Y), [Y1]),
+    findall(X, piece(Name1, X, _), X1_),
+    findall(X, piece(Name1, _, X), Y1_),
+    
+    nth0(0, X1_, X1),
+    nth0(0, Y1_, Y1),
+    
+    %% obtener posicion a la que va
+    move(X1, Y1, Mov, X_, Y_),
 
     %% analizar si es posicion valida (pos vacia)
-    bagof(Temp, piece(Temp, X1, Y1), Temp1), 
+    findall(Temp, piece(Temp, X_, Y_), Temp1), 
     Temp1 =:= [],
 
     %% analizar si los alrededores de N2 son validos, si son del mismo color
     describe_piece(Name1, Col, _, _),
-    bagof(Temp, turn(Temp1), [Turn]),
+    findall(Temp, turn(Temp1), [Turn]),
     Col =:= Turn mod 2,
     check_valid_surrounding_positions(X1, Y1, Col),
-
-    %% analizar si uno de sus parametros X, Y son menores que 1 (expancionar el tablero)
-    expand_table(X, Y),
     
     %% agregar objeto
+    write(agrego),
     assert(piece(Name2, X1, Y1)),
+    write(agrego),
     assert(position, X1, Y1, [Name]),
 
     %% actualiza el turno
@@ -120,23 +147,38 @@ add(Name1, Name2, Mov) :-
     if_name_queen(Name2),
 
     %% agrega una nueva pieza
-    bagof(X, pieces_on_table(X), Pieces),
+    findall(X, pieces_on_table(X), Pieces),
     append(Pieces, [Name], Pieces_),
     retract(pieces_on_table(Pieces)),
-    append(pieces_on_table(Pieces_))
+    append(pieces_on_table(Pieces_)),
+    findall(X, turn(X), [X_]),
+    retract(turn(X_)),
+    Xt = X_ + 1,
+    assert(Xt)
 .
 
-%% name1 pieza que se mueve
-%% name2 pieza guia
+%% name1 pieza guia
+%% name2 pieza que se mueve
 %% Mov, posicion del movimiento
-move(Name1, Name2, Mov) :-
+move(Name1, Name2, Mov, X, Y) :-
+    X = 1,
+    Y = 0
     %% ver si la reina ya esta en el tableto
+    describe_piece(Name2, Col, _, _),
+    is_queen_on_table(Col),
+
     %% ver si la colmena no se rompe
-    %% ver si la posicion no esta ocupada
+    true,
+
+    %% obtener posicion
+    true,
+
+    %% ver si la posicion no esta ocupada y si lo esta ver si la ficha no es un escarabajo
     %% ver si el recorrido pertenece a N1
     %% eliminar objeto anterior
     %% agregar objeto nuevo
-    false.
+    false
+.
 
 %% METODOS AUXILIARES %%
 hive_dfs(Name1, Name2) :-
@@ -144,55 +186,53 @@ hive_dfs(Name1, Name2) :-
     false.
 
 is_queen_on_table(0) :-
-    bagof(X, bqueen(X), P), P =:= [1].
+    findall(X, bqueen(X), P), P =:= [1].
 
 is_queen_on_table(1) :-
-    bagof(X, wqueen(X), P), P =:= [1].
+    findall(X, wqueen(X), P), P =:= [1].
 
-add_queen_to_table(0) :-
-    bagof(X, bqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
+add_queen_to_table(Val) :-
+    Val =:= 0,
+    findall(X, bqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
     retract(bqueen(0)),
-    assert(bqueen(1)),
+    assert(bqueen(1))
 .
 
-add_queen_to_table(1) :-
-    bagof(X, wqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
+add_queen_to_table(Val) :-
+    Val =:= 1,
+    findall(X, wqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
     retract(wqueen(0)),
-    assert(wqueen(1)),
+    assert(wqueen(1))
 .
 
-surroundings(X, Y, Z) :- 
-    move_right(X, Y, Xr, Yr),
-    move_up_right(X, T, Xru, Yru),
-    move_down_right(X, T, Xrd, Yrd),
-    move_left(X, Y, Xl, Yl),
-    move_up_left(X, Y, Xlu, Ylu),
-    move_down_left(X, Y, Xld, Yld),
-    Z = [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]
-.
 
-check_valid_surrounding_positions(X, Y, Col):-.
+check_valid_surrounding_positions(X, Y, Col):-
     surroundings(X, Y, [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]),
     is_poss_piece(Xr, Yr, Col),
     is_poss_piece(Xru, Yru, Col),
     is_poss_piece(Xrd, Yrd, Col),
     is_poss_piece(Xl, Yl, Col),
     is_poss_piece(Xlu, Ylu, Col),
-    is_poss_piece(Xld, Yld, Col),
+    is_poss_piece(Xld, Yld, Col)
 .
 
 is_poss_piece(X, Y, Col) :-
-    bagof(T, piece(T, _, _), Temp_),
+    findall(T, piece(T, _, _), Temp_),
     (Temp_ =:= [];
     (nth0(0, Temp_, Temp),
     describe_piece(Temp, Col1, _, _),
     Col =:= Col1))
 .
 
+is_poss_empty(X, Y, Col) :-
+    findall(T, piece(T, _, _), Temp_),
+    (Temp_ =:= [])
+.
+
 if_name_queen(Name) :-
-    (Name =:= 'WQ1',
+    (Name == "WQ1",
     add_queen_to_table(1));
-    (Name =:= 'BQ1',
+    (Name == "BQ1",
     add_queen_to_table(0));
     true    
 .
@@ -205,7 +245,25 @@ expand_table(X, Y) :-
 
 expand_x(X) :-
     X < 1,
-    bagof(X, piece(X, _, _), P)
+    findall(X, pieces_on_table(X), List),
+    iter_list(1, 0, List)
+.
+expand_y(Y) :-
+    Y < 1,
+    findall(Y, pieces_on_table(Y), List),
+    iter_list(0, 1, List)
+.
+
+iter_list(_, _, []).
+iter_list(X, Y, [Item|List]):-
+    findall([X1,Y1], piece(Item, X1, Y1), [Name_Temp]),
+    nth0(0, Name_Temp, Xt),
+    nth0(1, Name_Temp, Yt),
+    X_ is Xt + X,
+    Y_ is Yt + Y,
+    assert(piece(Item, X_, Y_)),
+    remove(piece(Item, X_, Y_)),
+    iter_list(X, Y, List)
 .
 
 %% METODOS DE MOVIMIENTO %%
@@ -253,10 +311,26 @@ rec([X|Rx], N, N1) :-
 
 %% POSIBLES POSICIONES %%
 
+selector(Val, X, Y, Pos):-
+    (Val == 'Q',
+    queen_bee(X, Y, Pos));
+    (Val == 'B',
+    beetle(X, Y, Pos));
+    (Val == 'A',
+    ant(X, Y, Pos, 3));
+    (Val == 'G',
+    grasshopper(X, Y, Pos));
+    (Val == 'S',
+    spider(X, Y, Pos));
+    (Val == 'L',
+    lady_bug(X, Y, Pos))
+.
+
 %% X: valor de x
 %% Y: valor de y
 %% Pos: lista de posibles posiciones
 queen_bee(X, Y, Pos) :-
+    %% Reina
     %% la reina solo se mueve a una posicion vacia con un solo paso 
     %% obtener posibles posiciones
     %% comprobar validez
@@ -264,6 +338,7 @@ queen_bee(X, Y, Pos) :-
     false.
     
 beetle(X, Y, Pos) :-
+    %% Escarabajo
     %% el escarabajo se mueve un solo paso, (no interesa si la posicion esta vacia o no) 
     %% obtener posibles posiciones
     %% comprobar validez 
@@ -271,6 +346,7 @@ beetle(X, Y, Pos) :-
     false.
 
 ant(X, Y, Pos) :-
+    %% Hormiga
     %% puede rodear la colmena, no puede ir a espacios vacios cualesquiera
     %% obtener posibles posiciones
     %% comprobar validez
@@ -278,6 +354,7 @@ ant(X, Y, Pos) :-
     false.
 
 spider(X, Y, Pos) :-
+    %% Araña
     %% se puede mover 3 posisiones, siempre tocando piezas en su trayectoria, manteniendo el contacto con la colmena
     %% obtener posibles posiciones
     %% comprobar validez 
@@ -285,6 +362,7 @@ spider(X, Y, Pos) :-
     false.
 
 grasshopper(X, Y, Pos):-
+    %% Saltamontes
     %% caminar en linea recta pasando por encima de las fichas existentes hasta encontrar un hueco
     %% obtener posibles posiciones
     %% comprobar validez 
