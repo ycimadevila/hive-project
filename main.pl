@@ -1,4 +1,4 @@
-%:- module('main',[addfirst/1, add/3, move/3, if_name_queen/1]).
+:- module('main',[add/1, add/3, move/3, if_name_queen/1]).
 
 :- dynamic add_queen_to_table/1.
 :- dynamic piece/3.
@@ -33,16 +33,6 @@ print_piece([Name|N]):- write(" <"), write(Name), write("> "), print_piece(N).
 print_row([]) :- nl.
 print_row([Tile | Tiles]) :- write(Tile), write(" "), print_row(Tiles).
 
-%%% random objects
-piece(a1, 1, 1).
-piece(a2, 2, 1).
-piece(a3, 3, 1).
-piece(a4, 4, 1).
-
-position(1, 2, e1, e3).
-position(1, 3, e1, e2).
-position(1, 4, e1, e4).
-position(1, 2, e2, e1).
 
 %% test print
 wr([]):- nl.
@@ -50,7 +40,7 @@ wr([X:Y| List]) :- write(X), write("-->"), write(Y), nl, wr(List).
 
 
 %%% METODOS DE INSERCION %%%
-addfirst(Name) :- 
+add(Name) :- 
     %% turnos pares para las negras e impares para las blancas
     assert(turn(1)),
 
@@ -88,10 +78,30 @@ add(Name1, Name2, Mov) :-
     nth0(0, Y1_, Y1),
 
     %% obtener posicion a la que va
-    move(X1, Y1, Mov, X_, Y_),
+    surroundings(X1, Y1, Z),
+    ((Mov =:= 1,
+    nth0(0,Z,X_),
+    nth0(1,Z,Y_));
+    (Mov =:= 2,
+    nth0(4,Z,X_),
+    nth0(5,Z,Y_));
+    (Mov =:= 3,
+    nth0(10,Z,X_),
+    writeln(here),
+    nth0(11,Z,Y_));
+    (Mov =:= 4,
+    nth0(6,Z,X_),
+    nth0(7,Z,Y_));
+    (Mov =:= 5,
+    nth0(8,Z,X_),
+    nth0(9,Z,Y_));
+    (Mov =:= 6,
+    nth0(2,Z,X_),
+    nth0(3,Z,Y_))),
 
     %% analizar si es posicion valida (pos vacia)
     findall(Temp, piece(Temp, X_, Y_), Temp1), 
+    writeln(Temp1),
     Temp1 == [],
 
     %% agregar objeto
@@ -162,7 +172,7 @@ add(Name1, Name2, Mov) :-
 %% name1 pieza guia
 %% name2 pieza que se mueve
 %% Mov, posicion del movimiento
-move(Name1, Name2, Mov, X, Y) :-
+move_to_pos(Name1, Name2, Mov, X, Y) :-
     X = 1,
     Y = 0,
     %% ver si la reina ya esta en el tableto
@@ -175,11 +185,27 @@ move(Name1, Name2, Mov, X, Y) :-
     %% obtener posicion
     true,
 
-    %% ver si la posicion no esta ocupada y si lo esta ver si la ficha no es un escarabajo
-    %% ver si el recorrido pertenece a N1
+    %% ver si la pos de llegada esta en la lista de posibles posiciones
+    %member([X, Y], Pos),
+    true,
+    
+    %buscar posicion en la que estaba
+    piece(Name2, X_, Y_),
+    writenl(X_),
+    writenl(Y_),
     %% eliminar objeto anterior
+    position(X_, Y_, List),
+    length(List, N), 
+    ((N > 0,
+    nth0(N - 1, List, Last)),
+    append(List_, [Last], List),
+    retract(position(X, Y, List)),
+    ((N == 1);(assert(position(X, Y, List_))))
+
     %% agregar objeto nuevo
-    false
+    position(X, Y, List_temp),
+    append(List_temp, [Name2], ),
+    assert(position(X_, Y_, List))
 .
 
 %% METODOS AUXILIARES %%
@@ -267,40 +293,6 @@ iter_list(X, Y, [Item|List]):-
     retract(piece(Item, X_, Y_)),
     iter_list(X, Y, List)
 .
-
-%% METODOS DE MOVIMIENTO %%
-move(X, Y, 1, X1, Y1) :- move_right(X, Y, X1, X2). % derecha
-move(X, Y, 2, X1, Y1) :- move_down_right(X, Y, X1, X2). % derecha abajo
-move(X, Y, 3, X1, Y1) :- move_down_left(X, Y, X1, X2). % izquierda abajo
-move(X, Y, 4, X1, Y1) :- move_left(X, Y, X1, X2). % izquierda
-move(X, Y, 5, X1, Y1) :- move_up_left(X, Y, X1, X2). % izquierda arriba
-move(X, Y, 6, X1, Y1) :- move_up_right(X, Y, X1, X2). % derecha arriba
-
-
-
-move_right(X, Y, X1, X2) :-
-    X1 is X + 1,
-    Y1 is Y.
-
-move_up_right(X, Y, X1, X2) :-
-    X1 is X + 1,
-    Y1 is Y - 1.
-
-move_down_right(X, Y, X1, X2) :-
-    X1 is X + 1,
-    Y1 is Y + 1.
-
-move_left(X, Y, X1, X2) :-
-    X1 is X - 1,
-    Y1 is Y.
-
-move_up_left(X, Y, X1, X2) :-
-    X1 is X - 1,
-    Y1 is Y - 1.
-
-move_down_left(X, Y, X1, X2) :-
-    X1 is X - 1,
-    Y1 is Y + 1.
 
 rec([], N, N1).
 rec([X|Rx], N, N1) :-
