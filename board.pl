@@ -24,19 +24,20 @@ non_member(E, [X|Xs]) :-
    non_member(E, Xs).
 
 
-west(X,Y,X1,Y1):- X1 is X-1, Y1 is Y.
-south_west(X,Y,X1,Y1):- X1 is X-1 + Y mod 2, Y1 is Y+1.
-south(X,Y,X1,Y1):- X1 is X, Y1 is Y-1.
-south_east(X,Y,X1,Y1):- X1 is X + Y mod 2, Y1 is Y+1.
-east(X,Y,X1,Y1):- X1 is X+1, Y1 is Y.
-north_east(X,Y,X1,Y1):- X1 is X + Y mod 2, Y1 is Y-1.
-north(X,Y,X1,Y1):- X1 is X, Y1 is Y+1.
-north_west(X,Y,X1,Y1):- X1 is X-1 + Y mod 2, Y1 is Y-1.
+
+west(X,Y,X1,Y1):- X1 is X-1, Y1 is Y.%izquierdad
+south_west(X,Y,X1,Y1):- X1 is X-1 + Y mod 2, Y1 is Y+1.%izquierda abajo
+%south(X,Y,X1,Y1):- X1 is X, Y1 is Y-1.
+south_east(X,Y,X1,Y1):- X1 is X + Y mod 2, Y1 is Y+1.%derecha abajo 
+east(X,Y,X1,Y1):- X1 is X+1, Y1 is Y.%derecha
+north_east(X,Y,X1,Y1):- X1 is X + Y mod 2, Y1 is Y-1.%derecha arriba 
+%north(X,Y,X1,Y1):- X1 is X, Y1 is Y+1.
+north_west(X,Y,X1,Y1):- X1 is X-1 + Y mod 2, Y1 is Y-1.%izquierda arriba
 
 
-surroundings(X,Y, Z):- west(X,Y,W1,W2),south(X,Y,S1,S2), south_east(X,Y,SE1,SE2),
-south_west(X,Y,SW1,SW2), east(X,Y,E1,E2), north_east(X,Y,NE1,NE2), north(X,Y,N1,N2),
-north_west(X,Y,NW1,NW2), Z = [W1,W2,SW1,SW2,S1,S2,SE1,SE2,E1,E2,NE1,NE2,N1,N2,NW1,NW2].
+surroundings(X,Y, Z):- west(X,Y,W1,W2), south_east(X,Y,SE1,SE2),
+south_west(X,Y,SW1,SW2), east(X,Y,E1,E2), north_east(X,Y,NE1,NE2),
+north_west(X,Y,NW1,NW2), Z = [W1,W2,SW1,SW2,SE1,SE2,E1,E2,NE1,NE2,NW1,NW2].
 
 check_conected(L) :- forall((select(S,L,R),member(T,R)), closure(connected(L),S,T)).
 
