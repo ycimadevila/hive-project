@@ -1,12 +1,13 @@
-:- module('main',[addfirst/1, add/3, move/3, if_name_queen/1]).
+%:- module('main',[addfirst/1, add/3, move/3, if_name_queen/1]).
 
 :- dynamic add_queen_to_table/1.
 :- dynamic piece/3.
-:- dynamic position/3.
+:- dynamic position/3. % X,Y,lista
 :- dynamic turn/1.
 :- dynamic wqueen/1.
 :- dynamic bqueen/1.
 :- dynamic pieces_on_table/1.
+:- dynamic queen_surrounding/1.
 
 :- use_module(utils).
 
@@ -162,7 +163,7 @@ add(Name1, Name2, Mov) :-
 %% Mov, posicion del movimiento
 move(Name1, Name2, Mov, X, Y) :-
     X = 1,
-    Y = 0
+    Y = 0,
     %% ver si la reina ya esta en el tableto
     describe_piece(Name2, Col, _, _),
     is_queen_on_table(Col),
@@ -329,14 +330,26 @@ selector(Val, X, Y, Pos):-
 %% X: valor de x
 %% Y: valor de y
 %% Pos: lista de posibles posiciones
-queen_bee(X, Y, Pos) :-
+queen(X, Y, Pos) :-
     %% Reina
     %% la reina solo se mueve a una posicion vacia con un solo paso 
     %% obtener posibles posiciones
-    %% comprobar validez
-    %% retornarlas
-    false.
-    
+    %% comprobar validez(sin la regla de una colmena)
+    %% retornarlas  
+    surroundings(X,Y,Pos1),
+    iter_queen_surrounding(Pos1,Pos2),
+    queen_surrounding(Pos),
+    retract(queen_surrounding(Pos)).
+
+iter_queen_surrounding([], Ans):-
+    assertz(queen_surrounding(Ans)).
+iter_queen_surrounding([X,Y|Tail], Ans):-
+    (not(position(X,Y,_)),    
+    Pos = [[X,Y]],
+    append(Ans,Pos,Ans1),
+    iter_queen_surrounding(Tail, Ans1));
+    iter_queen_surrounding(Tail, Ans1).
+        
 beetle(X, Y, Pos) :-
     %% Escarabajo
     %% el escarabajo se mueve un solo paso, (no interesa si la posicion esta vacia o no) 
