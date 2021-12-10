@@ -8,6 +8,7 @@
 :- dynamic bqueen/1.
 :- dynamic pieces_on_table/1.
 :- dynamic queen_surrounding/1.
+:- dynamic beetle_surrounding/1.
 
 :- use_module(utils).
 
@@ -140,7 +141,7 @@ add(Name1, Name2, Mov) :-
     write(agrego),
     assert(piece(Name2, X1, Y1)),
     write(agrego),
-    assert(position, X1, Y1, [Name]),
+    assert(position( X1, Y1, [Name])),
 
     %% actualiza el turno
     retract(turn(Turn)),
@@ -263,7 +264,7 @@ iter_list(X, Y, [Item|List]):-
     X_ is Xt + X,
     Y_ is Yt + Y,
     assert(piece(Item, X_, Y_)),
-    remove(piece(Item, X_, Y_)),
+    retract(piece(Item, X_, Y_)),
     iter_list(X, Y, List)
 .
 
@@ -314,11 +315,11 @@ rec([X|Rx], N, N1) :-
 
 selector(Val, X, Y, Pos):-
     (Val == 'Q',
-    queen_bee(X, Y, Pos));
+    queen(X, Y, Pos));
     (Val == 'B',
     beetle(X, Y, Pos));
     (Val == 'A',
-    ant(X, Y, Pos, 3));
+    ant(X, Y, Pos));
     (Val == 'G',
     grasshopper(X, Y, Pos));
     (Val == 'S',
@@ -350,13 +351,25 @@ iter_queen_surrounding([X,Y|Tail], Ans):-
     iter_queen_surrounding(Tail, Ans1));
     iter_queen_surrounding(Tail, Ans1).
         
+
 beetle(X, Y, Pos) :-
     %% Escarabajo
     %% el escarabajo se mueve un solo paso, (no interesa si la posicion esta vacia o no) 
     %% obtener posibles posiciones
-    %% comprobar validez 
+    %% comprobar validez(sin regla de una colmenaa)
     %% retornarlas
-    false.
+    surroundings(X,Y,Pos1),  
+    iter_beetle_surrounding(Pos1,Pos2),
+    beetle_surrounding(Pos),
+    retract(beetle_surrounding(Pos)).
+
+iter_beetle_surrounding([], Ans):-
+    assertz(beetle_surrounding(Ans)).
+iter_beetle_surrounding([X,Y|Tail], Ans):- 
+    Pos = [[X,Y]],
+    append(Ans,Pos,Ans1),
+    writeln(Ans1),
+    iter_beetle_surrounding(Tail, Ans1).
 
 ant(X, Y, Pos) :-
     %% Hormiga
