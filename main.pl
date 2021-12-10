@@ -1,4 +1,5 @@
-module('main',[piece/3, position/4, add/1, add/3, move/3]).
+:-module('main',[piece/3, position/4, add/1, add/3, move/3]).
+:-use_module(inputs)
 
 meta_predicate piece(?,?,?). %% Name, X, Y
 meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
@@ -6,7 +7,11 @@ meta_predicate position(?,?,?,?). %% X, Y, Name1, Name2
 %% turnos pares para las negras e impares para las blancas
 turn(1).
 %% 1 si la reina ya esta en el tablero, 0 e.o.c.
-is_queen(0).
+wqueen(0).
+bqueen(0).
+
+%% piezas que ya se encuentran en el tablero
+pieces_on_table([]).
 
 %% METODOS INTERNOS %%
 add_piece(Name, X, Y) :-
@@ -50,8 +55,14 @@ add(Name) :-
     %% analizar si es el turno 1
     bagof(X, turn(X), Y), Y =:= [1],
     %% agregar objeto 
-    assert(piece(Name, X, Y)),
-    assert(position(X, Y, ))    
+    assert(piece(Name, 1, 1)),
+    assert(position(1, 1, [Name])),
+    if_name_queen(Name),
+    %% agrega una nueva pieza
+    bagof(X, pieces_on_table(X), Pieces),
+    append(Pieces, [Name], Pieces_),
+    retract(pieces_on_table(Pieces)),
+    append(pieces_on_table(Pieces_))
 .
 
 add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
@@ -59,30 +70,65 @@ add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
     %% obtener posicion de Name1
     bagof(X, piece(Name1, X, _), [X1]),
     bagof(Y, piece(Name1, _, Y), [Y1]),
+    %% obtener posicion a la que va
+    move(X1, Y1, Mov, X1_, X2_),
     %% analizar si es posicion valida (pos vacia)
-    bagof(Temp, piece(Temp, X1, Y1), Temp1), 
+    bagof(Temp, piece(Temp, X1_, Y1_), Temp1), 
     Temp1 =:= [],
     %% agregar objeto
-    assert(piece(Name2, X1, Y1)),
-    assert(position, X1, Y1, [Name])
+    assert(piece(Name2, X1_, Y1_)),
+    assert(position, X1_, Y1_, [Name2]),
+    if_name_queen(Name2).
+    %% agrega una nueva pieza
+    bagof(X, pieces_on_table(X), Pieces),
+    append(Pieces, [Name], Pieces_),
+    retract(pieces_on_table(Pieces)),
+    append(pieces_on_table(Pieces_))
 .
 
-
-add(Name1, Name2, Mov) :-  % analisis por si el turno es el 2do
-    bagof(X, turn(X), Y), Y =:= [2],
+%% Name1 pieza existente
+%% Name2 pieza a poner
+%% Mov pos a colocar
+add(Name1, Name2, Mov) :-  
     %% obtener posicion de Name1
+    describe_piece(Name1, Col1, _, _),
+    describe_piece(Name2, Col2, _, ),
+    Col1 =:= Col2,
     bagof(X, piece(Name1, X, _), [X1]),
     bagof(Y, piece(Name1, _, Y), [Y1]),
+
     %% analizar si es posicion valida (pos vacia)
     bagof(Temp, piece(Temp, X1, Y1), Temp1), 
     Temp1 =:= [],
-    %% analizar si los alrededores de N2 son validos
+
+    %% analizar si los alrededores de N2 son validos, si son del mismo color
+    describe_piece(Name1, Col, _, _),
+    bagof(Temp, turn(Temp1), [Turn]),
+    Col =:= Turn mod 2,
+    check_valid_surrounding_positions(X1, Y1, Col),
+
+    %% analizar si uno de sus parametros X, Y son menores que 1 (expancionar el tablero)
+    expand_table(X, Y),
     
     %% agregar objeto
     assert(piece(Name2, X1, Y1)),
-    assert(position, X1, Y1, [Name])
+    assert(position, X1, Y1, [Name]),
+
+    %% actualiza el turno
+    retract(turn(Turn)),
+    assert(turn(Turn + 1)),
+    if_name_queen(Name2),
+
+    %% agrega una nueva pieza
+    bagof(X, pieces_on_table(X), Pieces),
+    append(Pieces, [Name], Pieces_),
+    retract(pieces_on_table(Pieces)),
+    append(pieces_on_table(Pieces_))
 .
 
+%% name1 pieza que se mueve
+%% name2 pieza guia
+%% Mov, posicion del movimiento
 move(Name1, Name2, Mov) :-
     %% ver si la reina ya esta en el tableto
     %% ver si la colmena no se rompe
@@ -97,23 +143,69 @@ hive_dfs(Name1, Name2) :-
     %% analiza por DFS si la colmena esta desconectada
     false.
 
-is_queen_on_table() :-
-    bagof(X, is_queen(X), P), P =:= [1].
+is_queen_on_table(0) :-
+    bagof(X, bqueen(X), P), P =:= [1].
 
-add_queen_to_table() :-
-    bagof(X, is_queen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
-    retract(is_queen(0)),
-    assert(is_queen(1)),
+is_queen_on_table(1) :-
+    bagof(X, wqueen(X), P), P =:= [1].
+
+add_queen_to_table(0) :-
+    bagof(X, bqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
+    retract(bqueen(0)),
+    assert(bqueen(1)),
+.
+
+add_queen_to_table(1) :-
+    bagof(X, wqueen(X), P), P =:= [1]; % Hace cortocircuito si la reina ya esta en el tablero, no la agrega de nuevo
+    retract(wqueen(0)),
+    assert(wqueen(1)),
 .
 
 surroundings(X, Y, Z) :- 
     move_right(X, Y, Xr, Yr),
     move_up_right(X, T, Xru, Yru),
-    move_down_right(X, T, Xdu, Ydu),
+    move_down_right(X, T, Xrd, Yrd),
     move_left(X, Y, Xl, Yl),
     move_up_left(X, Y, Xlu, Ylu),
     move_down_left(X, Y, Xld, Yld),
-    Z = [Xr, Yr, Xru, Yru, Xdu, Ydu, Xl, Yl, Xlu, Ylu, Xld, Yld]
+    Z = [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]
+.
+
+check_valid_surrounding_positions(X, Y, Col):-.
+    surroundings(X, Y, [Xr, Yr, Xru, Yru, Xrd, Yrd, Xl, Yl, Xlu, Ylu, Xld, Yld]),
+    is_poss_piece(Xr, Yr, Col),
+    is_poss_piece(Xru, Yru, Col),
+    is_poss_piece(Xrd, Yrd, Col),
+    is_poss_piece(Xl, Yl, Col),
+    is_poss_piece(Xlu, Ylu, Col),
+    is_poss_piece(Xld, Yld, Col),
+.
+
+is_poss_piece(X, Y, Col) :-
+    bagof(T, piece(T, _, _), Temp_),
+    (Temp_ =:= [];
+    (nth0(0, Temp_, Temp),
+    describe_piece(Temp, Col1, _, _),
+    Col =:= Col1))
+.
+
+if_name_queen(Name) :-
+    (Name =:= 'WQ1',
+    add_queen_to_table(1));
+    (Name =:= 'BQ1',
+    add_queen_to_table(0));
+    true    
+.
+
+expand_table(X, Y) :-
+    expand_x(X);
+    expand_y(Y);
+    true
+.
+
+expand_x(X) :-
+    X < 1,
+    bagof(X, piece(X, _, _), P)
 .
 
 %% METODOS DE MOVIMIENTO %%
