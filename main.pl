@@ -24,7 +24,7 @@ add_position(X, Y, Name1, Name2) :-
     assert(position(X, Y, Name1, Name2)).
 
 remove_position(X, Y, Name1, Name2) :-
-    retract(position(0X, Y, Name1, Name2)). 
+    retract(position(X, Y, Name1, Name2)). 
 
 %% print the piece
 print_piece([]) :- nl.
