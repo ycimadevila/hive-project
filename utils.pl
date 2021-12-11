@@ -1,7 +1,7 @@
 :-module('utils', [surroundings/3, move/5]).
 :-use_module(library(ugraphs)).
 
-:- dynamic node/3.
+:- dynamic vertex/3.
 :- dynamic edge/2.
 
 surroundings(X, Y, Z) :- 
@@ -52,9 +52,15 @@ move_down_left(X, Y, X1, Y1) :-
 %% CONSTRUIR UN GRAFO %%
 
 graph(L, G):- 
-    vertices_edges_to_ugraph([], [], G),    
-    build_vertex(L,0,G), 
-    build_edges(L,G).
+    vertices_edges_to_ugraph([], [], G),
+    build_vertex(L,0,G),
+
+    write("G--->"), writeln(G),
+
+    build_edges(L,G),
+    
+    writeln(sali)
+.
 
 build_vertex([],_,_).
 build_vertex([Pos|Tail],Id,G):- 
@@ -70,15 +76,23 @@ build_edges([Pos|Tail],G):-
     nth0(0, Pos, X),
     nth0(1,Pos,Y),
     surroundings(X,Y,S),
-    write("holi"),
+
+    write("S-->"), writeln(S), 
+    write("Tail-->"), writeln(Tail),
+
     register_all_surroundings(S,X,Y,G),
+
+    write(registre),
+
     build_edges(Tail).
 
 register_all_surroundings([],_,_,_).
 register_all_surroundings([X1,Y1|Tail],X,Y,G):-
-    vertex(X1,Y1,V1),
-    vertex(X,Y,V2),
-    add_edges(G, [V1-V2,V2-V1], G1),    
+    vertex(X1, Y1, V1),
+    vertex(X, Y, V2),
+    write("G-->"), writeln(G),
+    add_edges(G, [V1-V2,V2-V1], G1),  
+    write("G1-->"), writeln(G1),
     register_all_surroundings(Tail,X,Y,G1).
     
 
