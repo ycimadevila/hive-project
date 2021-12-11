@@ -69,7 +69,16 @@ add(Name) :-
 .
 % analisis por si el turno es el 2do
 add(Name1, Name2, Mov) :-  
-    findall(X, turn(X), Y), Y =:= [2],
+    write(hola),
+    (
+        (findall(X, turn(X), Y), Y =:= [2]
+        );
+        (
+            describe_piece(Name1, Col1, _, _),
+            describe_piece(Name2, Col2, _, _),
+            Col1 =:= Col2
+        )
+    ),
     %% obtener posicion de Name1
     findall(X, piece(Name1, X, _), X1_),
     findall(X, piece(Name1, _, X), Y1_),
@@ -79,25 +88,14 @@ add(Name1, Name2, Mov) :-
 
     %% obtener posicion a la que va
     surroundings(X1, Y1, Z),
-    ((Mov =:= 1,
-    nth0(0,Z,X_),
-    nth0(1,Z,Y_));
-    (Mov =:= 2,
-    nth0(4,Z,X_),
-    nth0(5,Z,Y_));
-    (Mov =:= 3,
-    nth0(10,Z,X_),
-    writeln(here),
-    nth0(11,Z,Y_));
-    (Mov =:= 4,
-    nth0(6,Z,X_),
-    nth0(7,Z,Y_));
-    (Mov =:= 5,
-    nth0(8,Z,X_),
-    nth0(9,Z,Y_));
-    (Mov =:= 6,
-    nth0(2,Z,X_),
-    nth0(3,Z,Y_))),
+    (
+        (Mov =:= 1, nth0(0,Z,X_),  nth0(1,Z,Y_));
+        (Mov =:= 2,  nth0(4,Z,X_),  nth0(5,Z,Y_));
+        (Mov =:= 3,  nth0(10,Z,X_), nth0(11,Z,Y_));
+        (Mov =:= 4,  nth0(6,Z,X_),  nth0(7,Z,Y_));
+        (Mov =:= 5,  nth0(8,Z,X_),  nth0(9,Z,Y_));
+        (Mov =:= 6,  nth0(2,Z,X_),  nth0(3,Z,Y_))
+    ),
 
     %% analizar si es posicion valida (pos vacia)
     findall(Temp, piece(Temp, X_, Y_), Temp1), 
@@ -106,8 +104,32 @@ add(Name1, Name2, Mov) :-
 
     %% agregar objeto
     assert(piece(Name2, X_, Y_)),
-    assert(position(X_, Y_, [Name2])),
-    
+    (   
+        (
+            findall(X, turn(X), Y), Y =:= [2],
+            assert(position(X_, Y_, [Name2])),
+            write(heyentre)
+        );
+        (
+            findall(Temp1, position(X_, Y_, Temp1), Namelist_Temp),
+            write(heyentremas),nl,
+            write(Namelist_Temp),nl,
+            (
+                (
+                    (
+                        Namelist_Temp == [],
+                        assert(position(X_, Y_, [Name2]))
+                    );
+                    (
+                        position(X_, Y_, Namelist),
+                        append(Namelist, [Name2], NList),
+                        assert(position(X_, Y_, Nlist))
+                    )
+                )
+            )
+        )
+    ),
+
     if_name_queen(Name2),
 
     %% agrega una nueva pieza
@@ -115,15 +137,18 @@ add(Name1, Name2, Mov) :-
     append(Pieces, [Name2], Pieces_),
     retract(pieces_on_table(Pieces)),
     assert(pieces_on_table(Pieces_)),
-    retract(turn(2)),
-    assert(turn(3))
+    
+    findall(T, turn(T), [T_]),
+    Xt is T_ + 1,
+    assert(turn(Xt)),
+    retract(turn(T_))
 .
-
 
 %% Name1 pieza existente
 %% Name2 pieza a poner
 %% Mov pos a colocar
 add(Name1, Name2, Mov) :-  
+    print(masdeuno),
     %% obtener posicion de Name1
     describe_piece(Name1, Col1, _, _),
     describe_piece(Name2, Col2, _, _),
@@ -135,11 +160,18 @@ add(Name1, Name2, Mov) :-
     nth0(0, Y1_, Y1),
     
     %% obtener posicion a la que va
-    move(X1, Y1, Mov, X_, Y_),
+    surroundings(X1, Y1, Z),
+    ((Mov =:= 1, nth0(0,Z,X_), nth0(1,Z,Y_));
+    (Mov =:= 2, nth0(4,Z,X_), nth0(5,Z,Y_));
+    (Mov =:= 3, nth0(10,Z,X_), nth0(11,Z,Y_));
+    (Mov =:= 4, nth0(6,Z,X_), nth0(7,Z,Y_));
+    (Mov =:= 5, nth0(8,Z,X_), nth0(9,Z,Y_));
+    (Mov =:= 6, nth0(2,Z,X_), nth0(3,Z,Y_))),
+
 
     %% analizar si es posicion valida (pos vacia)
     findall(Temp, piece(Temp, X_, Y_), Temp1), 
-    Temp1 =:= [],
+    Temp1 == [],
 
     %% analizar si los alrededores de N2 son validos, si son del mismo color
     describe_piece(Name1, Col, _, _),
@@ -153,9 +185,7 @@ add(Name1, Name2, Mov) :-
     write(agrego),
     assert(position( X1, Y1, [Name])),
 
-    %% actualiza el turno
-    retract(turn(Turn)),
-    assert(turn(Turn + 1)),
+    %% decir si se anadio la reina
     if_name_queen(Name2),
 
     %% agrega una nueva pieza
@@ -163,6 +193,7 @@ add(Name1, Name2, Mov) :-
     append(Pieces, [Name], Pieces_),
     retract(pieces_on_table(Pieces)),
     append(pieces_on_table(Pieces_)),
+
     findall(X, turn(X), [X_]),
     retract(turn(X_)),
     Xt = X_ + 1,
@@ -196,16 +227,23 @@ move_to_pos(Name1, Name2, Mov, X, Y) :-
     %% eliminar objeto anterior
     position(X_, Y_, List),
     length(List, N), 
-    ((N > 0,
-    nth0(N - 1, List, Last)),
-    append(List_, [Last], List),
-    retract(position(X, Y, List)),
-    ((N == 1);(assert(position(X, Y, List_))))
+    (   
+        (
+            N > 0,
+            nth0(N - 1, List, Last)
+        ),
+        append(List_, [Last], List),
+        retract(position(X, Y, List))
+    ),
+    (   
+        (N == 1);
+        (assert(position(X, Y, List_)))
+    ),
 
     %% agregar objeto nuevo
     position(X, Y, List_temp),
-    append(List_temp, [Name2], ),
-    assert(position(X_, Y_, List))
+    append(List_temp, [Name2], List___),
+    assert(position(X_, Y_, List___))
 .
 
 %% METODOS AUXILIARES %%
